@@ -1,5 +1,6 @@
 module App exposing (main)
 
+import Brew
 import Html exposing (..)
 import Html.Attributes
 import Html.Events
@@ -67,6 +68,7 @@ update msg model =
         newTable =
             model.table
                 |> updateRow index (rowUpdate parsedValue)
+                |> updateRow index updateRowCalculations
     in
     ( { model | table = newTable }, Cmd.none )
 
@@ -86,6 +88,11 @@ setCalibration maybeCalibration row =
     { row | hydrometerCalibration = maybeCalibration }
 
 
+setCorrectedGravity : Maybe Float -> Row -> Row
+setCorrectedGravity maybeGravity row =
+    { row | correctedGravity = maybeGravity }
+
+
 updateRow : Int -> (Row -> Row) -> List Row -> List Row
 updateRow index f table =
     let
@@ -96,6 +103,20 @@ updateRow index f table =
                 row
     in
     List.indexedMap updateFunc table
+
+
+updateRowCalculations : Row -> Row
+updateRowCalculations row =
+    let
+        newCorrectedGravity =
+            case ( row.measuredGravity, row.measuredTemperature, row.hydrometerCalibration ) of
+                ( Just gravity, Just temp, Just calibration ) ->
+                    Just (Brew.hydrometerTempCorrection gravity temp calibration)
+
+                _ ->
+                    Nothing
+    in
+    { row | correctedGravity = newCorrectedGravity }
 
 
 view : Model -> Html Msg
