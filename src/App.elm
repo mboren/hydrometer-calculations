@@ -4,6 +4,7 @@ import Brew
 import Html exposing (..)
 import Html.Attributes
 import Html.Events
+import Table
 
 
 main : Program Never Model Msg
@@ -21,7 +22,8 @@ type alias Temperature =
 
 
 type alias Row =
-    { measuredGravity : Maybe Float
+    { id : Int
+    , measuredGravity : Maybe Float
     , measuredTemperature : Maybe Temperature
     , hydrometerCalibration : Maybe Temperature
     , correctedGravity : Maybe Float
@@ -30,40 +32,55 @@ type alias Row =
 
 type alias Model =
     { table : List Row
+    , tableState : Table.State
     }
 
 
-emptyRow =
-    Row Nothing Nothing Nothing Nothing
+emptyRow id =
+    Row id Nothing Nothing Nothing Nothing
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( Model [ emptyRow ], Cmd.none )
+    ( Model [ emptyRow 0 ] (Table.initialSort ""), Cmd.none )
 
 
 type Msg
     = NewGravity Int String
     | NewTemperature Int String
     | NewCalibration Int String
+    | SetTableState Table.State
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
+    case msg of
+        NewGravity index value ->
+            ( handleInputFields setGravity index value model
+            , Cmd.none
+            )
+
+        NewCalibration index value ->
+            ( handleInputFields setCalibration index value model
+            , Cmd.none
+            )
+
+        NewTemperature index value ->
+            ( handleInputFields setTemperature index value model
+            , Cmd.none
+            )
+
+        SetTableState newState ->
+            ( { model | tableState = newState }
+            , Cmd.none
+            )
+
+
+handleInputFields : (Maybe Float -> Row -> Row) -> Int -> String -> Model -> Model
+handleInputFields rowUpdate index value model =
     let
-        ( rowUpdate, index, value ) =
-            case msg of
-                NewGravity index value ->
-                    ( setGravity, index, value )
-
-                NewCalibration index value ->
-                    ( setCalibration, index, value )
-
-                NewTemperature index value ->
-                    ( setTemperature, index, value )
-
         lastRow =
-            index == (List.length model.table) - 1
+            index == List.length model.table - 1
 
         parsedValue =
             String.toFloat value |> Result.toMaybe
@@ -72,9 +89,13 @@ update msg model =
             model.table
                 |> updateRow index (rowUpdate parsedValue)
                 |> updateRow index updateRowCalculations
-                |> if lastRow then addEmptyRow else identity
+                |> (if lastRow then
+                        addEmptyRow
+                    else
+                        identity
+                   )
     in
-    ( { model | table = newTable }, Cmd.none )
+    { model | table = newTable }
 
 
 setGravity : Maybe Float -> Row -> Row
@@ -122,15 +143,30 @@ updateRowCalculations row =
     in
     { row | correctedGravity = newCorrectedGravity }
 
+
 addEmptyRow : List Row -> List Row
 addEmptyRow rows =
-    List.append rows [ emptyRow ]
+    List.append rows [ emptyRow (List.length rows) ]
+
+
+config =
+    Table.config
+        { toId = .id >> toString
+        , toMsg = SetTableState
+        , columns =
+            [ Table.stringColumn "Measured SG" .measuredGravity
+            , Table.stringColumn "Measured Temp (F)" .measuredTemperature
+            , Table.stringColumn "Hydrometer Calibration Temp (F)" .hydrometerCalibration
+            , Table.stringColumn "Corrected SG" .correctedGravity
+            ]
+        }
 
 
 view : Model -> Html Msg
 view model =
     div []
         [ viewTable model.table
+        , Table.view config model.tableState (model.table |> List.map stringifyRowFields)
         ]
 
 
@@ -145,7 +181,8 @@ viewTable rows =
 
 
 stringifyRowFields row =
-    { measuredGravity = Maybe.withDefault "" (Maybe.map toString row.measuredGravity)
+    { id = row.id
+    , measuredGravity = Maybe.withDefault "" (Maybe.map toString row.measuredGravity)
     , measuredTemperature = Maybe.withDefault "" (Maybe.map toString row.measuredTemperature)
     , hydrometerCalibration = Maybe.withDefault "" (Maybe.map toString row.hydrometerCalibration)
     , correctedGravity = Maybe.withDefault "" (Maybe.map toString row.correctedGravity)
