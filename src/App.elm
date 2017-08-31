@@ -62,6 +62,9 @@ update msg model =
                 NewTemperature index value ->
                     ( setTemperature, index, value )
 
+        lastRow =
+            index == (List.length model.table) - 1
+
         parsedValue =
             String.toFloat value |> Result.toMaybe
 
@@ -69,6 +72,7 @@ update msg model =
             model.table
                 |> updateRow index (rowUpdate parsedValue)
                 |> updateRow index updateRowCalculations
+                |> if lastRow then addEmptyRow else identity
     in
     ( { model | table = newTable }, Cmd.none )
 
@@ -117,6 +121,10 @@ updateRowCalculations row =
                     Nothing
     in
     { row | correctedGravity = newCorrectedGravity }
+
+addEmptyRow : List Row -> List Row
+addEmptyRow rows =
+    List.append rows [ emptyRow ]
 
 
 view : Model -> Html Msg
