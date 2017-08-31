@@ -121,13 +121,13 @@ setCorrectedGravity maybeGravity row =
 updateRow : Int -> (Row -> Row) -> List Row -> List Row
 updateRow index f table =
     let
-        updateFunc i row =
-            if i == index then
+        updateFunc row =
+            if row.id == index then
                 f row
             else
                 row
     in
-    List.indexedMap updateFunc table
+    List.map updateFunc table
 
 
 updateRowCalculations : Row -> Row
@@ -176,7 +176,7 @@ viewTable rows =
         []
         (rows
             |> List.map stringifyRowFields
-            |> List.indexedMap viewRow
+            |> List.map viewRow
         )
 
 
@@ -189,12 +189,12 @@ stringifyRowFields row =
     }
 
 
-viewRow index row =
+viewRow row =
     div
         []
-        [ numberInput row.measuredGravity (NewGravity index)
-        , numberInput row.measuredTemperature (NewTemperature index)
-        , numberInput row.hydrometerCalibration (NewCalibration index)
+        [ numberInput row.measuredGravity (NewGravity row.id)
+        , numberInput row.measuredTemperature (NewTemperature row.id)
+        , numberInput row.hydrometerCalibration (NewCalibration row.id)
         , text row.correctedGravity
         ]
 
