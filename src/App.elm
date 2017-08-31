@@ -1,6 +1,8 @@
 module App exposing (main)
 
 import Html exposing (..)
+import Html.Attributes
+import Html.Events
 
 
 main : Program Never Model Msg
@@ -30,9 +32,13 @@ type alias Model =
     }
 
 
+emptyRow =
+    Row Nothing Nothing Nothing Nothing
+
+
 init : ( Model, Cmd Msg )
 init =
-    ( Model [], Cmd.none )
+    ( Model [ emptyRow ], Cmd.none )
 
 
 type Msg
@@ -49,5 +55,42 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div []
-        [ text (toString model)
+        [ viewTable model.table
         ]
+
+
+viewTable : List Row -> Html Msg
+viewTable rows =
+    div
+        []
+        (rows
+            |> List.map stringifyRowFields
+            |> List.indexedMap viewRow
+        )
+
+
+stringifyRowFields row =
+    { measuredGravity = Maybe.withDefault "" (Maybe.map toString row.measuredGravity)
+    , measuredTemperature = Maybe.withDefault "" (Maybe.map toString row.measuredTemperature)
+    , hydrometerCalibration = Maybe.withDefault "" (Maybe.map toString row.hydrometerCalibration)
+    , correctedGravity = Maybe.withDefault "" (Maybe.map toString row.correctedGravity)
+    }
+
+
+viewRow index row =
+    div
+        []
+        [ numberInput row.measuredGravity (NewGravity index)
+        , numberInput row.measuredTemperature (NewTemperature index)
+        , numberInput row.hydrometerCalibration (NewCalibration index)
+        ]
+
+
+numberInput : String -> (String -> Msg) -> Html Msg
+numberInput default inputEvent =
+    input
+        [ Html.Attributes.type_ "number"
+        , Html.Attributes.defaultValue default
+        , Html.Events.onInput inputEvent
+        ]
+        []
