@@ -154,48 +154,32 @@ config =
         { toId = .id >> toString
         , toMsg = SetTableState
         , columns =
-            [ Table.stringColumn "Measured SG" .measuredGravity
-            , Table.stringColumn "Measured Temp (F)" .measuredTemperature
-            , Table.stringColumn "Hydrometer Calibration Temp (F)" .hydrometerCalibration
-            , Table.stringColumn "Corrected SG" .correctedGravity
+            [ inputColumn "Measured SG 2" (.measuredGravity >> toString) NewGravity
+            , inputColumn "Measured Temp (F)" (.measuredTemperature >> toString) NewTemperature
+            , inputColumn "Hydrometer Calibration Temp (F)" (.hydrometerCalibration >> toString) NewCalibration
+            , Table.stringColumn "Corrected SG" (.correctedGravity >> Maybe.map toString >> Maybe.withDefault "")
             ]
         }
 
 
 view : Model -> Html Msg
 view model =
-    div []
-        [ viewTable model.table
-        , Table.view config model.tableState (model.table |> List.map stringifyRowFields)
+    div
+        []
+        [ Table.view config model.tableState model.table
         ]
 
 
-viewTable : List Row -> Html Msg
-viewTable rows =
-    div
-        []
-        (rows
-            |> List.map stringifyRowFields
-            |> List.map viewRow
-        )
+inputColumn : String -> (Row -> String) -> (Int -> (String -> Msg)) -> Table.Column Row Msg
+inputColumn name getValue msg =
+    Table.veryCustomColumn
+        { name = name, viewData = viewInputColumn getValue (\r -> msg r.id), sorter = Table.unsortable }
 
 
-stringifyRowFields row =
-    { id = row.id
-    , measuredGravity = Maybe.withDefault "" (Maybe.map toString row.measuredGravity)
-    , measuredTemperature = Maybe.withDefault "" (Maybe.map toString row.measuredTemperature)
-    , hydrometerCalibration = Maybe.withDefault "" (Maybe.map toString row.hydrometerCalibration)
-    , correctedGravity = Maybe.withDefault "" (Maybe.map toString row.correctedGravity)
-    }
-
-
-viewRow row =
-    div
-        []
-        [ numberInput row.measuredGravity (NewGravity row.id)
-        , numberInput row.measuredTemperature (NewTemperature row.id)
-        , numberInput row.hydrometerCalibration (NewCalibration row.id)
-        , text row.correctedGravity
+viewInputColumn : (Row -> String) -> (Row -> (String -> Msg)) -> Row -> Table.HtmlDetails Msg
+viewInputColumn getValue getMsg row =
+    Table.HtmlDetails []
+        [ numberInput (getValue row) (getMsg row)
         ]
 
 
