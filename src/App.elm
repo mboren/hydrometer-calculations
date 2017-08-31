@@ -49,7 +49,53 @@ type Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    ( model, Cmd.none )
+    let
+        ( rowUpdate, index, value ) =
+            case msg of
+                NewGravity index value ->
+                    ( setGravity, index, value )
+
+                NewCalibration index value ->
+                    ( setCalibration, index, value )
+
+                NewTemperature index value ->
+                    ( setTemperature, index, value )
+
+        parsedValue =
+            String.toFloat value |> Result.toMaybe
+
+        newTable =
+            model.table
+                |> updateRow index (rowUpdate parsedValue)
+    in
+    ( { model | table = newTable }, Cmd.none )
+
+
+setGravity : Maybe Float -> Row -> Row
+setGravity maybeGravity row =
+    { row | measuredGravity = maybeGravity }
+
+
+setTemperature : Maybe Temperature -> Row -> Row
+setTemperature maybeTemperature row =
+    { row | measuredTemperature = maybeTemperature }
+
+
+setCalibration : Maybe Temperature -> Row -> Row
+setCalibration maybeCalibration row =
+    { row | hydrometerCalibration = maybeCalibration }
+
+
+updateRow : Int -> (Row -> Row) -> List Row -> List Row
+updateRow index f table =
+    let
+        updateFunc i row =
+            if i == index then
+                f row
+            else
+                row
+    in
+    List.indexedMap updateFunc table
 
 
 view : Model -> Html Msg
