@@ -129,6 +129,7 @@ viewRow index row =
         [ numberInput row.measuredGravity (NewGravity index)
         , numberInput row.measuredTemperature (NewTemperature index)
         , numberInput row.hydrometerCalibration (NewCalibration index)
+        , text row.correctedGravity
         ]
 
 
