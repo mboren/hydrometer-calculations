@@ -153,7 +153,7 @@ config =
         { toId = .id >> toString
         , toMsg = SetTableState
         , columns =
-            [ inputColumn "Measured SG 2" (.measuredGravity >> toString) NewGravity
+            [ inputColumn "Measured SG" (.measuredGravity >> toString) NewGravity
             , inputColumn "Measured Temp (F)" (.measuredTemperature >> toString) NewTemperature
             , inputColumn "Hydrometer Calibration Temp (F)" (.hydrometerCalibration >> toString) NewCalibration
             , Table.stringColumn "Corrected SG" (.correctedGravity >> Maybe.map toString >> Maybe.withDefault "")
