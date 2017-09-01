@@ -27,6 +27,7 @@ type alias Row =
     , measuredTemperature : Maybe Temperature
     , hydrometerCalibration : Maybe Temperature
     , correctedGravity : Maybe Float
+    , abv : Maybe Float
     }
 
 
@@ -37,7 +38,7 @@ type alias Model =
 
 
 emptyRow id =
-    Row id Nothing Nothing Nothing Nothing
+    Row id Nothing Nothing Nothing Nothing Nothing
 
 
 init : ( Model, Cmd Msg )
@@ -85,7 +86,7 @@ handleInputFields rowUpdate index value model =
         parsedValue =
             String.toFloat value |> Result.toMaybe
 
-        newTable =
+        tableWithUpdatedGravity =
             model.table
                 |> updateRow index (rowUpdate parsedValue)
                 |> updateRow index updateCorrectedGravity
@@ -94,8 +95,22 @@ handleInputFields rowUpdate index value model =
                     else
                         identity
                    )
+
+        og =
+            tableWithUpdatedGravity
+                |> List.head
+                |> Maybe.andThen .correctedGravity
+
+        -- This recalculates ABVs for the whole table every time
+        -- any value is updated. It really only needs to update
+        -- every row when the first row changes, however, this
+        -- makes the logic simpler and i really don't expect
+        -- performance issues with this app.
+        tableWithUpdatedAbvs =
+            tableWithUpdatedGravity
+                |> List.map (updateAbv og)
     in
-    { model | table = newTable }
+    { model | table = tableWithUpdatedAbvs }
 
 
 setGravity : Maybe Float -> Row -> Row
@@ -143,6 +158,11 @@ updateCorrectedGravity row =
     { row | correctedGravity = newCorrectedGravity }
 
 
+updateAbv : Maybe Float -> Row -> Row
+updateAbv og row =
+    { row | abv = Maybe.map2 Brew.calculateAbv og row.correctedGravity }
+
+
 addEmptyRow : List Row -> List Row
 addEmptyRow rows =
     List.append rows [ emptyRow (List.length rows) ]
@@ -157,6 +177,7 @@ config =
             , inputColumn "Measured Temp (F)" (.measuredTemperature >> toString) NewTemperature
             , inputColumn "Hydrometer Calibration Temp (F)" (.hydrometerCalibration >> toString) NewCalibration
             , Table.stringColumn "Corrected SG" (.correctedGravity >> Maybe.map toString >> Maybe.withDefault "")
+            , Table.stringColumn "ABV" (.abv >> Maybe.map toString >> Maybe.withDefault "")
             ]
         }
 

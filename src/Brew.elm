@@ -1,4 +1,4 @@
-module Brew exposing (hydrometerTempCorrection)
+module Brew exposing (calculateAbv, hydrometerTempCorrection)
 
 {-| Brewing terminology used in this module:
 
@@ -35,3 +35,10 @@ hydrometerTempCorrection measuredGravity measuredTemp hydrometerCalibration =
             hydrometerCalibration
     in
     mg * ((1.00130346 - 0.000134722124 * mt + 0.00000204052596 * mt * mt - 0.00000000232820948 * mt * mt * mt) / (1.00130346 - 0.000134722124 * hc + 0.00000204052596 * hc * hc - 0.00000000232820948 * hc * hc * hc))
+
+
+{-| Calculate % alcohol by value from original gravity (OG) and final gravity (FG)
+-}
+calculateAbv : Float -> Float -> Float
+calculateAbv og fg =
+    (76.08 * fg * (og - fg)) / (0.794 * (1.775 - og))
