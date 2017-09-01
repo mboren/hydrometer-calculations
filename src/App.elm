@@ -88,7 +88,7 @@ handleInputFields rowUpdate index value model =
         newTable =
             model.table
                 |> updateRow index (rowUpdate parsedValue)
-                |> updateRow index updateRowCalculations
+                |> updateRow index updateCorrectedGravity
                 |> (if lastRow then
                         addEmptyRow
                     else
@@ -130,16 +130,15 @@ updateRow index f table =
     List.map updateFunc table
 
 
-updateRowCalculations : Row -> Row
-updateRowCalculations row =
+updateCorrectedGravity : Row -> Row
+updateCorrectedGravity row =
     let
         newCorrectedGravity =
-            case ( row.measuredGravity, row.measuredTemperature, row.hydrometerCalibration ) of
-                ( Just gravity, Just temp, Just calibration ) ->
-                    Just (Brew.hydrometerTempCorrection gravity temp calibration)
-
-                _ ->
-                    Nothing
+            Maybe.map3
+                Brew.hydrometerTempCorrection
+                row.measuredGravity
+                row.measuredTemperature
+                row.hydrometerCalibration
     in
     { row | correctedGravity = newCorrectedGravity }
 
