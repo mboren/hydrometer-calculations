@@ -218,8 +218,8 @@ config =
             [ inputColumn "Measured SG" (.measuredGravity >> maybeToString) NewGravity
             , inputColumn "Measured Temp (F)" (.measuredTemperature >> maybeToString) NewTemperature
             , inputColumn "Hydrometer Calibration Temp (F)" (.hydrometerCalibration >> maybeToString) NewCalibration
-            , unsortableColumn "Corrected SG" (.correctedGravity >> formatGravity)
-            , unsortableColumn "ABV" (.abv >> formatAbv)
+            , outputColumn "Corrected SG" (.correctedGravity >> formatGravity)
+            , outputColumn "ABV" (.abv >> formatAbv)
             ]
         }
 
@@ -235,12 +235,6 @@ view model =
         , Table.view config model.tableState model.table
         ]
 
-unsortableColumn name viewData =
-    Table.customColumn
-        { name = name
-        , viewData = viewData
-        , sorter = Table.unsortable
-        }
 
 inputColumn : String -> (Row -> String) -> (Int -> (String -> Msg)) -> Table.Column Row Msg
 inputColumn name getValue msg =
@@ -263,3 +257,22 @@ numberInput default inputEvent =
         , Html.Events.onInput inputEvent
         ]
         []
+
+
+outputColumn : String -> (Row -> String) -> Table.Column Row Msg
+outputColumn name getValue =
+    Table.veryCustomColumn
+        { name = name
+        , viewData = viewOutputColumn getValue
+        , sorter = Table.unsortable
+        }
+
+
+viewOutputColumn : (Row -> String) -> Row -> Table.HtmlDetails Msg
+viewOutputColumn getValue row =
+    Table.HtmlDetails
+        [ Html.Attributes.style
+            [ ( "background", "#EEEEEE" ) ]
+        ]
+        [ Html.text (getValue row)
+        ]
