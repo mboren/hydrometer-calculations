@@ -4,6 +4,7 @@ import Brew
 import Html exposing (..)
 import Html.Attributes
 import Html.Events
+import Numeral exposing (format)
 import Table
 
 
@@ -201,6 +202,14 @@ maybeToString =
     Maybe.map toString >> Maybe.withDefault ""
 
 
+formatGravity =
+    Maybe.map (format "0.000") >> Maybe.withDefault ""
+
+
+formatAbv =
+    Maybe.map (format "0.00%") >> Maybe.withDefault ""
+
+
 config =
     Table.config
         { toId = .id >> toString
@@ -209,8 +218,8 @@ config =
             [ inputColumn "Measured SG" (.measuredGravity >> maybeToString) NewGravity
             , inputColumn "Measured Temp (F)" (.measuredTemperature >> maybeToString) NewTemperature
             , inputColumn "Hydrometer Calibration Temp (F)" (.hydrometerCalibration >> maybeToString) NewCalibration
-            , Table.stringColumn "Corrected SG" (.correctedGravity >> maybeToString)
-            , Table.stringColumn "ABV" (.abv >> maybeToString)
+            , Table.stringColumn "Corrected SG" (.correctedGravity >> formatGravity)
+            , Table.stringColumn "ABV" (.abv >> formatAbv)
             ]
         }
 
