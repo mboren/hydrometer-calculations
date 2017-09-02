@@ -34,7 +34,7 @@ type alias Row =
 type alias Model =
     { table : List Row
     , tableState : Table.State
-    , defaultCalibration : Maybe Float
+    , defaultCalibration : Float
     }
 
 
@@ -52,9 +52,9 @@ init : ( Model, Cmd Msg )
 init =
     let
         defaultCalibration =
-            Just 60
+            60
     in
-    ( Model [ emptyRow 0 defaultCalibration ] (Table.initialSort "") defaultCalibration, Cmd.none )
+    ( Model [ emptyRow 0 (Just defaultCalibration) ] (Table.initialSort "") defaultCalibration, Cmd.none )
 
 
 type Msg
@@ -102,7 +102,7 @@ handleInputFields rowUpdate index value model =
                 |> updateRow index (rowUpdate parsedValue)
                 |> updateRow index updateCorrectedGravity
                 |> (if lastRow then
-                        addEmptyRow model.defaultCalibration
+                        addEmptyRow (Just model.defaultCalibration)
                     else
                         identity
                    )
