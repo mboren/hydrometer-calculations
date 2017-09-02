@@ -34,16 +34,27 @@ type alias Row =
 type alias Model =
     { table : List Row
     , tableState : Table.State
+    , defaultCalibration : Maybe Float
     }
 
 
-emptyRow id =
-    Row id Nothing Nothing Nothing Nothing Nothing
+emptyRow id calibration =
+    { id = id
+    , measuredGravity = Nothing
+    , measuredTemperature = Nothing
+    , hydrometerCalibration = calibration
+    , correctedGravity = Nothing
+    , abv = Nothing
+    }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( Model [ emptyRow 0 ] (Table.initialSort ""), Cmd.none )
+    let
+        defaultCalibration =
+            Just 60
+    in
+    ( Model [ emptyRow 0 defaultCalibration ] (Table.initialSort "") defaultCalibration, Cmd.none )
 
 
 type Msg
@@ -91,7 +102,7 @@ handleInputFields rowUpdate index value model =
                 |> updateRow index (rowUpdate parsedValue)
                 |> updateRow index updateCorrectedGravity
                 |> (if lastRow then
-                        addEmptyRow
+                        addEmptyRow model.defaultCalibration
                     else
                         identity
                    )
@@ -163,9 +174,9 @@ updateAbv og row =
     { row | abv = Maybe.map2 Brew.calculateAbv og row.correctedGravity }
 
 
-addEmptyRow : List Row -> List Row
-addEmptyRow rows =
-    List.append rows [ emptyRow (List.length rows) ]
+addEmptyRow : Maybe Float -> List Row -> List Row
+addEmptyRow calibration rows =
+    List.append rows [ emptyRow (List.length rows) calibration ]
 
 
 config =
