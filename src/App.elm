@@ -218,8 +218,8 @@ config =
             [ inputColumn "Measured SG" (.measuredGravity >> maybeToString) NewGravity
             , inputColumn "Measured Temp (F)" (.measuredTemperature >> maybeToString) NewTemperature
             , inputColumn "Hydrometer Calibration Temp (F)" (.hydrometerCalibration >> maybeToString) NewCalibration
-            , Table.stringColumn "Corrected SG" (.correctedGravity >> formatGravity)
-            , Table.stringColumn "ABV" (.abv >> formatAbv)
+            , unsortableColumn "Corrected SG" (.correctedGravity >> formatGravity)
+            , unsortableColumn "ABV" (.abv >> formatAbv)
             ]
         }
 
@@ -235,6 +235,12 @@ view model =
         , Table.view config model.tableState model.table
         ]
 
+unsortableColumn name viewData =
+    Table.customColumn
+        { name = name
+        , viewData = viewData
+        , sorter = Table.unsortable
+        }
 
 inputColumn : String -> (Row -> String) -> (Int -> (String -> Msg)) -> Table.Column Row Msg
 inputColumn name getValue msg =
