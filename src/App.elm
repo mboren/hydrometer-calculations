@@ -62,6 +62,7 @@ type Msg
     | NewTemperature Int String
     | NewCalibration Int String
     | SetTableState Table.State
+    | NewDefaultCalibration String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -84,6 +85,23 @@ update msg model =
 
         SetTableState newState ->
             ( { model | tableState = newState }
+            , Cmd.none
+            )
+
+        NewDefaultCalibration value ->
+            let
+                parsedValue =
+                    String.toFloat value
+
+                newDefault =
+                    case parsedValue of
+                        Ok val ->
+                            val
+
+                        Err _ ->
+                            model.defaultCalibration
+            in
+            ( { model | defaultCalibration = newDefault }
             , Cmd.none
             )
 
@@ -201,7 +219,11 @@ view : Model -> Html Msg
 view model =
     div
         []
-        [ Table.view config model.tableState model.table
+        [ label []
+            [ text "Default hydrometer calibration (F) "
+            , numberInput (toString model.defaultCalibration) NewDefaultCalibration
+            ]
+        , Table.view config model.tableState model.table
         ]
 
 
