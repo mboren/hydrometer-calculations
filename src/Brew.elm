@@ -41,4 +41,4 @@ hydrometerTempCorrection measuredGravity measuredTemp hydrometerCalibration =
 -}
 calculateAbv : Float -> Float -> Float
 calculateAbv og fg =
-    (76.08 * fg * (og - fg)) / (0.794 * (1.775 - og))
+    0.01 * (76.08 * fg * (og - fg)) / (0.794 * (1.775 - og))
