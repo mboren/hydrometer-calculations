@@ -179,16 +179,20 @@ addEmptyRow calibration rows =
     List.append rows [ emptyRow (List.length rows) calibration ]
 
 
+maybeToString =
+    Maybe.map toString >> Maybe.withDefault ""
+
+
 config =
     Table.config
         { toId = .id >> toString
         , toMsg = SetTableState
         , columns =
-            [ inputColumn "Measured SG" (.measuredGravity >> toString) NewGravity
-            , inputColumn "Measured Temp (F)" (.measuredTemperature >> toString) NewTemperature
-            , inputColumn "Hydrometer Calibration Temp (F)" (.hydrometerCalibration >> toString) NewCalibration
-            , Table.stringColumn "Corrected SG" (.correctedGravity >> Maybe.map toString >> Maybe.withDefault "")
-            , Table.stringColumn "ABV" (.abv >> Maybe.map toString >> Maybe.withDefault "")
+            [ inputColumn "Measured SG" (.measuredGravity >> maybeToString) NewGravity
+            , inputColumn "Measured Temp (F)" (.measuredTemperature >> maybeToString) NewTemperature
+            , inputColumn "Hydrometer Calibration Temp (F)" (.hydrometerCalibration >> maybeToString) NewCalibration
+            , Table.stringColumn "Corrected SG" (.correctedGravity >> maybeToString)
+            , Table.stringColumn "ABV" (.abv >> maybeToString)
             ]
         }
 
