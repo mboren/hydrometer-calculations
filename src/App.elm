@@ -64,6 +64,7 @@ type Msg
     | NewCalibration Int String
     | SetTableState Table.State
     | NewDefaultCalibration String
+    | Clear
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -103,6 +104,11 @@ update msg model =
                             model.defaultCalibration
             in
             ( { model | defaultCalibration = newDefault }
+            , Cmd.none
+            )
+
+        Clear ->
+            ( { model | table = addEmptyRow (Just model.defaultCalibration) [] }
             , Cmd.none
             )
 
@@ -232,6 +238,11 @@ view model =
             [ text "Default hydrometer calibration (F) "
             , numberInput (toString model.defaultCalibration) NewDefaultCalibration
             ]
+        , br [] []
+        , button
+            [ Html.Events.onClick Clear ]
+            [ text "delete everything in table" ]
+        , br [] []
         , Table.view config model.tableState model.table
         ]
 
