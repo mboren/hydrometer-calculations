@@ -56,7 +56,12 @@ init =
         defaultCalibration =
             60
     in
-    ( Model [ emptyRow 0 (toString defaultCalibration) ] (Table.initialSort "") defaultCalibration, Cmd.none )
+    ( { table = [ emptyRow 0 (toString defaultCalibration) ]
+      , tableState = Table.initialSort ""
+      , defaultCalibration = defaultCalibration
+      }
+    , Cmd.none
+    )
 
 
 type Msg
@@ -93,23 +98,19 @@ update msg model =
 
         NewDefaultCalibration value ->
             let
-                parsedValue =
-                    String.toFloat value
-
                 newDefault =
-                    case parsedValue of
-                        Ok val ->
-                            val
-
-                        Err _ ->
-                            model.defaultCalibration
+                    value
+                        |> String.toFloat
+                        |> Result.withDefault model.defaultCalibration
             in
             ( { model | defaultCalibration = newDefault }
             , Cmd.none
             )
 
         Clear ->
-            ( { model | table = addEmptyRow model.defaultCalibration [] }
+            ( { model
+                | table = addEmptyRow model.defaultCalibration []
+              }
             , Cmd.none
             )
 
@@ -141,8 +142,7 @@ handleInputFields rowUpdate index value model =
         -- makes the logic simpler and i really don't expect
         -- performance issues with this app.
         tableWithUpdatedAbvs =
-            tableWithUpdatedGravity
-                |> List.map (updateAbv og)
+            List.map (updateAbv og) tableWithUpdatedGravity
     in
     { model | table = tableWithUpdatedAbvs }
 
@@ -189,12 +189,16 @@ updateCorrectedGravity row =
                 (String.toFloat row.measuredTemperature)
                 (String.toFloat row.hydrometerCalibration)
     in
-    { row | correctedGravity = Result.toMaybe newCorrectedGravity }
+    { row
+        | correctedGravity = Result.toMaybe newCorrectedGravity
+    }
 
 
 updateAbv : Maybe Float -> Row -> Row
 updateAbv og row =
-    { row | abv = Maybe.map2 Brew.calculateAbv og row.correctedGravity }
+    { row
+        | abv = Maybe.map2 Brew.calculateAbv og row.correctedGravity
+    }
 
 
 addEmptyRow : Float -> List Row -> List Row
@@ -241,13 +245,16 @@ view model =
         ]
 
 
-inputColumn : String -> (Row -> String) -> (Int -> (String -> Msg)) -> Table.Column Row Msg
+inputColumn : String -> (Row -> String) -> (Int -> String -> Msg) -> Table.Column Row Msg
 inputColumn name getValue msg =
     Table.veryCustomColumn
-        { name = name, viewData = viewInputColumn getValue (\r -> msg r.id), sorter = Table.unsortable }
+        { name = name
+        , viewData = viewInputColumn getValue (.id >> msg)
+        , sorter = Table.unsortable
+        }
 
 
-viewInputColumn : (Row -> String) -> (Row -> (String -> Msg)) -> Row -> Table.HtmlDetails Msg
+viewInputColumn : (Row -> String) -> (Row -> String -> Msg) -> Row -> Table.HtmlDetails Msg
 viewInputColumn getValue getMsg row =
     Table.HtmlDetails []
         [ numberInput (getValue row) (getMsg row)
