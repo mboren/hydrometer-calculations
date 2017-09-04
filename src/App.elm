@@ -179,21 +179,17 @@ updateRow index f table =
     List.map updateFunc table
 
 
-stringToMaybeFloat =
-    String.toFloat >> Result.toMaybe
-
-
 updateCorrectedGravity : Row -> Row
 updateCorrectedGravity row =
     let
         newCorrectedGravity =
-            Maybe.map3
+            Result.map3
                 Brew.hydrometerTempCorrection
-                (stringToMaybeFloat row.measuredGravity)
-                (stringToMaybeFloat row.measuredTemperature)
-                (stringToMaybeFloat row.hydrometerCalibration)
+                (String.toFloat row.measuredGravity)
+                (String.toFloat row.measuredTemperature)
+                (String.toFloat row.hydrometerCalibration)
     in
-    { row | correctedGravity = newCorrectedGravity }
+    { row | correctedGravity = Result.toMaybe newCorrectedGravity }
 
 
 updateAbv : Maybe Float -> Row -> Row
