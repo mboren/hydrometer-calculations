@@ -24,9 +24,9 @@ type alias Temperature =
 
 type alias Row =
     { id : Int
-    , measuredGravity : Maybe Float
-    , measuredTemperature : Maybe Temperature
-    , hydrometerCalibration : Maybe Temperature
+    , measuredGravity : String
+    , measuredTemperature : String
+    , hydrometerCalibration : String
     , correctedGravity : Maybe Float
     , abv : Maybe Float
     }
@@ -39,10 +39,11 @@ type alias Model =
     }
 
 
+emptyRow : Int -> String -> Row
 emptyRow id calibration =
     { id = id
-    , measuredGravity = Nothing
-    , measuredTemperature = Nothing
+    , measuredGravity = ""
+    , measuredTemperature = ""
     , hydrometerCalibration = calibration
     , correctedGravity = Nothing
     , abv = Nothing
@@ -55,7 +56,7 @@ init =
         defaultCalibration =
             60
     in
-    ( Model [ emptyRow 0 (Just defaultCalibration) ] (Table.initialSort "") defaultCalibration, Cmd.none )
+    ( Model [ emptyRow 0 (toString defaultCalibration) ] (Table.initialSort "") defaultCalibration, Cmd.none )
 
 
 type Msg
@@ -108,12 +109,12 @@ update msg model =
             )
 
         Clear ->
-            ( { model | table = addEmptyRow (Just model.defaultCalibration) [] }
+            ( { model | table = addEmptyRow model.defaultCalibration [] }
             , Cmd.none
             )
 
 
-handleInputFields : (Maybe Float -> Row -> Row) -> Int -> String -> Model -> Model
+handleInputFields : (String -> Row -> Row) -> Int -> String -> Model -> Model
 handleInputFields rowUpdate index value model =
     let
         lastRow =
@@ -124,10 +125,10 @@ handleInputFields rowUpdate index value model =
 
         tableWithUpdatedGravity =
             model.table
-                |> updateRow index (rowUpdate parsedValue)
+                |> updateRow index (rowUpdate value)
                 |> updateRow index updateCorrectedGravity
                 |> (if lastRow then
-                        addEmptyRow (Just model.defaultCalibration)
+                        addEmptyRow model.defaultCalibration
                     else
                         identity
                    )
@@ -149,24 +150,24 @@ handleInputFields rowUpdate index value model =
     { model | table = tableWithUpdatedAbvs }
 
 
-setGravity : Maybe Float -> Row -> Row
-setGravity maybeGravity row =
-    { row | measuredGravity = maybeGravity }
+setGravity : String -> Row -> Row
+setGravity gravity row =
+    { row | measuredGravity = gravity }
 
 
-setTemperature : Maybe Temperature -> Row -> Row
-setTemperature maybeTemperature row =
-    { row | measuredTemperature = maybeTemperature }
+setTemperature : String -> Row -> Row
+setTemperature temperature row =
+    { row | measuredTemperature = temperature }
 
 
-setCalibration : Maybe Temperature -> Row -> Row
-setCalibration maybeCalibration row =
-    { row | hydrometerCalibration = maybeCalibration }
+setCalibration : String -> Row -> Row
+setCalibration calibration row =
+    { row | hydrometerCalibration = calibration }
 
 
 setCorrectedGravity : Maybe Float -> Row -> Row
-setCorrectedGravity maybeGravity row =
-    { row | correctedGravity = maybeGravity }
+setCorrectedGravity gravity row =
+    { row | correctedGravity = gravity }
 
 
 updateRow : Int -> (Row -> Row) -> List Row -> List Row
@@ -181,15 +182,19 @@ updateRow index f table =
     List.map updateFunc table
 
 
+stringToMaybeFloat =
+    String.toFloat >> Result.toMaybe
+
+
 updateCorrectedGravity : Row -> Row
 updateCorrectedGravity row =
     let
         newCorrectedGravity =
             Maybe.map3
                 Brew.hydrometerTempCorrection
-                row.measuredGravity
-                row.measuredTemperature
-                row.hydrometerCalibration
+                (stringToMaybeFloat row.measuredGravity)
+                (stringToMaybeFloat row.measuredTemperature)
+                (stringToMaybeFloat row.hydrometerCalibration)
     in
     { row | correctedGravity = newCorrectedGravity }
 
@@ -199,13 +204,9 @@ updateAbv og row =
     { row | abv = Maybe.map2 Brew.calculateAbv og row.correctedGravity }
 
 
-addEmptyRow : Maybe Float -> List Row -> List Row
+addEmptyRow : Float -> List Row -> List Row
 addEmptyRow calibration rows =
-    List.append rows [ emptyRow (List.length rows) calibration ]
-
-
-maybeToString =
-    Maybe.map toString >> Maybe.withDefault ""
+    List.append rows [ emptyRow (List.length rows) (toString calibration) ]
 
 
 formatGravity =
@@ -221,9 +222,9 @@ config =
         { toId = .id >> toString
         , toMsg = SetTableState
         , columns =
-            [ inputColumn "Measured SG" (.measuredGravity >> maybeToString) NewGravity
-            , inputColumn "Measured Temp (F)" (.measuredTemperature >> maybeToString) NewTemperature
-            , inputColumn "Hydrometer Calibration Temp (F)" (.hydrometerCalibration >> maybeToString) NewCalibration
+            [ inputColumn "Measured SG" .measuredGravity NewGravity
+            , inputColumn "Measured Temp (F)" .measuredTemperature NewTemperature
+            , inputColumn "Hydrometer Calibration Temp (F)" .hydrometerCalibration NewCalibration
             , outputColumn "Corrected SG" (.correctedGravity >> formatGravity)
             , outputColumn "ABV" (.abv >> formatAbv)
             ]
