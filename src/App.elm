@@ -23,8 +23,7 @@ type alias Temperature =
 
 
 type alias Row =
-    { id : Int
-    , measuredGravity : String
+    { measuredGravity : String
     , measuredTemperature : String
     , hydrometerCalibration : String
     , correctedGravity : Maybe Float
@@ -39,10 +38,9 @@ type alias Model =
     }
 
 
-emptyRow : Int -> String -> Row
-emptyRow id calibration =
-    { id = id
-    , measuredGravity = ""
+emptyRow : String -> Row
+emptyRow calibration =
+    { measuredGravity = ""
     , measuredTemperature = ""
     , hydrometerCalibration = calibration
     , correctedGravity = Nothing
@@ -56,7 +54,7 @@ init =
         defaultCalibration =
             60
     in
-    ( { table = [ emptyRow 0 (toString defaultCalibration) ]
+    ( { table = [ emptyRow (toString defaultCalibration) ]
       , tableState = Table.initialSort ""
       , defaultCalibration = defaultCalibration
       }
@@ -170,13 +168,13 @@ setCorrectedGravity gravity row =
 updateRow : Int -> (Row -> Row) -> List Row -> List Row
 updateRow index f table =
     let
-        updateFunc row =
-            if row.id == index then
+        updateFunc i row =
+            if i == index then
                 f row
             else
                 row
     in
-    List.map updateFunc table
+    List.indexedMap updateFunc table
 
 
 updateCorrectedGravity : Row -> Row
@@ -203,7 +201,7 @@ updateAbv og row =
 
 addEmptyRow : Float -> List Row -> List Row
 addEmptyRow calibration rows =
-    List.append rows [ emptyRow (List.length rows) (toString calibration) ]
+    List.append rows [ emptyRow (toString calibration) ]
 
 
 formatGravity =
@@ -216,7 +214,7 @@ formatAbv =
 
 config =
     Table.config
-        { toId = .id >> toString
+        { toId = Tuple.first >> toString
         , toMsg = SetTableState
         , columns =
             [ inputColumn "Measured SG" .measuredGravity NewGravity
@@ -241,23 +239,23 @@ view model =
             [ Html.Events.onClick Clear ]
             [ text "delete everything in table" ]
         , br [] []
-        , Table.view config model.tableState model.table
+        , Table.view config model.tableState (List.indexedMap (,) model.table)
         ]
 
 
-inputColumn : String -> (Row -> String) -> (Int -> String -> Msg) -> Table.Column Row Msg
+inputColumn : String -> (Row -> String) -> (Int -> String -> Msg) -> Table.Column ( Int, Row ) Msg
 inputColumn name getValue msg =
     Table.veryCustomColumn
         { name = name
-        , viewData = viewInputColumn getValue (.id >> msg)
+        , viewData = viewInputColumn getValue msg
         , sorter = Table.unsortable
         }
 
 
-viewInputColumn : (Row -> String) -> (Row -> String -> Msg) -> Row -> Table.HtmlDetails Msg
-viewInputColumn getValue getMsg row =
+viewInputColumn : (Row -> String) -> (Int -> String -> Msg) -> ( Int, Row ) -> Table.HtmlDetails Msg
+viewInputColumn getValue getMsg ( id, row ) =
     Table.HtmlDetails []
-        [ numberInput (getValue row) (getMsg row)
+        [ numberInput (getValue row) (getMsg id)
         ]
 
 
@@ -271,7 +269,7 @@ numberInput default inputEvent =
         []
 
 
-outputColumn : String -> (Row -> String) -> Table.Column Row Msg
+outputColumn : String -> (Row -> String) -> Table.Column ( Int, Row ) Msg
 outputColumn name getValue =
     Table.veryCustomColumn
         { name = name
@@ -280,8 +278,8 @@ outputColumn name getValue =
         }
 
 
-viewOutputColumn : (Row -> String) -> Row -> Table.HtmlDetails Msg
-viewOutputColumn getValue row =
+viewOutputColumn : (Row -> String) -> ( a, Row ) -> Table.HtmlDetails Msg
+viewOutputColumn getValue ( _, row ) =
     Table.HtmlDetails
         [ Html.Attributes.style
             [ ( "background", "#EEEEEE" ) ]
