@@ -265,7 +265,7 @@ numberInput : String -> (String -> Msg) -> Html Msg
 numberInput default inputEvent =
     input
         [ Html.Attributes.type_ "number"
-        , Html.Attributes.defaultValue default
+        , Html.Attributes.value default
         , Html.Events.onInput inputEvent
         ]
         []
