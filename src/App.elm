@@ -33,6 +33,7 @@ type alias Row =
 
 type alias Model =
     { table : List Row
+    , lastRow : Row
     , tableState : Table.State
     , defaultCalibration : Float
     }
@@ -54,8 +55,9 @@ init =
         defaultCalibration =
             60
     in
-    ( { table = [ emptyRow (toString defaultCalibration) ]
+    ( { table = []
       , tableState = Table.initialSort ""
+      , lastRow = emptyRow (toString defaultCalibration)
       , defaultCalibration = defaultCalibration
       }
     , Cmd.none
@@ -100,14 +102,20 @@ update msg model =
                     value
                         |> String.toFloat
                         |> Result.withDefault model.defaultCalibration
+
+                newLastRow =
+                    setCalibration (toString newDefault) model.lastRow
             in
-            ( { model | defaultCalibration = newDefault }
+            ( { model
+                | defaultCalibration = newDefault
+                , lastRow = newLastRow
+              }
             , Cmd.none
             )
 
         Clear ->
             ( { model
-                | table = addEmptyRow model.defaultCalibration []
+                | table = []
               }
             , Cmd.none
             )
@@ -117,17 +125,17 @@ handleInputFields : (Row -> Row) -> Int -> Model -> Model
 handleInputFields rowUpdate index model =
     let
         lastRow =
-            index == List.length model.table - 1
+            index == List.length model.table
 
         tableWithUpdatedGravity =
             model.table
-                |> updateRow index rowUpdate
-                |> updateRow index updateCorrectedGravity
                 |> (if lastRow then
                         addEmptyRow model.defaultCalibration
                     else
                         identity
                    )
+                |> updateRow index rowUpdate
+                |> updateRow index updateCorrectedGravity
 
         og =
             tableWithUpdatedGravity
@@ -239,7 +247,7 @@ view model =
             [ Html.Events.onClick Clear ]
             [ text "delete everything in table" ]
         , br [] []
-        , Table.view config model.tableState (List.indexedMap (,) model.table)
+        , Table.view config model.tableState (List.indexedMap (,) (model.table ++ [ model.lastRow ]))
         ]
 
 
