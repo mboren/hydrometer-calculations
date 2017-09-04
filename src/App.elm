@@ -77,17 +77,17 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         NewGravity index value ->
-            ( handleInputFields setGravity index value model
+            ( handleInputFields (setGravity value) index model
             , Cmd.none
             )
 
         NewCalibration index value ->
-            ( handleInputFields setCalibration index value model
+            ( handleInputFields (setCalibration value) index model
             , Cmd.none
             )
 
         NewTemperature index value ->
-            ( handleInputFields setTemperature index value model
+            ( handleInputFields (setTemperature value) index model
             , Cmd.none
             )
 
@@ -115,15 +115,15 @@ update msg model =
             )
 
 
-handleInputFields : (String -> Row -> Row) -> Int -> String -> Model -> Model
-handleInputFields rowUpdate index value model =
+handleInputFields : (Row -> Row) -> Int -> Model -> Model
+handleInputFields rowUpdate index model =
     let
         lastRow =
             index == List.length model.table - 1
 
         tableWithUpdatedGravity =
             model.table
-                |> updateRow index (rowUpdate value)
+                |> updateRow index rowUpdate
                 |> updateRow index updateCorrectedGravity
                 |> (if lastRow then
                         addEmptyRow model.defaultCalibration
