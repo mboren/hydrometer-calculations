@@ -70,6 +70,7 @@ type Msg
     | NewCalibration Int String
     | SetTableState Table.State
     | NewDefaultCalibration String
+    | DeleteRow Int
     | Clear
 
 
@@ -120,6 +121,13 @@ update msg model =
             , Cmd.none
             )
 
+        DeleteRow index ->
+            ( { model
+                | table = deleteRow index model.table
+              }
+            , Cmd.none
+            )
+
 
 handleInputFields : (Row -> Row) -> Int -> Model -> Model
 handleInputFields rowUpdate index model =
@@ -151,6 +159,33 @@ handleInputFields rowUpdate index model =
             List.map (updateAbv og) tableWithUpdatedGravity
     in
     { model | table = tableWithUpdatedAbvs }
+
+
+{-|
+Delete row from table and update table ABV values if it was the first row
+-}
+deleteRow : Int -> List Row -> List Row
+deleteRow index rows =
+    rows
+        |> List.indexedMap (,)
+        |> List.filter (Tuple.first >> (/=) index)
+        |> List.map Tuple.second
+        |> (if index == 0 then
+                updateTableAbvs
+            else
+                identity
+           )
+
+
+updateTableAbvs : List Row -> List Row
+updateTableAbvs table =
+    let
+        og =
+            table
+                |> List.head
+                |> Maybe.andThen .correctedGravity
+    in
+    List.map (updateAbv og) table
 
 
 setGravity : String -> Row -> Row
@@ -230,6 +265,7 @@ config =
             , inputColumn "Hydrometer Calibration Temp (F)" .hydrometerCalibration NewCalibration
             , outputColumn "Corrected SG" (.correctedGravity >> formatGravity)
             , outputColumn "ABV" (.abv >> formatAbv)
+            , deleteColumn
             ]
         }
 
@@ -293,4 +329,23 @@ viewOutputColumn getValue ( _, row ) =
             [ ( "background", "#EEEEEE" ) ]
         ]
         [ Html.text (getValue row)
+        ]
+
+
+deleteColumn : Table.Column ( Int, Row ) Msg
+deleteColumn =
+    Table.veryCustomColumn
+        { name = ""
+        , viewData = viewDeleteColumn
+        , sorter = Table.unsortable
+        }
+
+
+viewDeleteColumn : ( Int, a ) -> Table.HtmlDetails Msg
+viewDeleteColumn ( id, _ ) =
+    Table.HtmlDetails
+        []
+        [ button
+            [ Html.Events.onClick (DeleteRow id) ]
+            [ text "✖" ]
         ]
