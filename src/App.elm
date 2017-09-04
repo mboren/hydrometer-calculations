@@ -120,9 +120,6 @@ handleInputFields rowUpdate index value model =
         lastRow =
             index == List.length model.table - 1
 
-        parsedValue =
-            String.toFloat value |> Result.toMaybe
-
         tableWithUpdatedGravity =
             model.table
                 |> updateRow index (rowUpdate value)
