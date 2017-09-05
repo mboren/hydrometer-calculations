@@ -292,12 +292,20 @@ view model =
 
         tableData =
             List.indexedMap (,) (model.table ++ [ model.lastRow ])
+
+        clearButton =
+            if List.isEmpty model.table then
+                Html.text ""
+            else
+                button
+                [ Html.Events.onClick Clear ]
+                [ text "delete everything in table" ]
+
+
     in
     div
         []
-        [ button
-            [ Html.Events.onClick Clear ]
-            [ text "delete everything in table" ]
+        [ clearButton
         , br [] []
         , Table.view cfg model.tableState tableData
         ]
