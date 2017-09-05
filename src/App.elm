@@ -129,6 +129,15 @@ update msg model =
             )
 
 
+{-| Update table when an input field changes.
+This includes:
+
+  - Setting input field value
+  - recalculating corrected SG for changed row
+  - recalculating ABV for the whole table
+  - adding an empty row to the table if changed row is last row
+
+-}
 handleInputFields : (Row -> Row) -> Int -> Model -> Model
 handleInputFields rowUpdate index model =
     let
