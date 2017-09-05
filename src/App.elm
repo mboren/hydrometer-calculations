@@ -164,8 +164,7 @@ handleInputFields rowUpdate index model =
     { model | table = tableWithUpdatedAbvs }
 
 
-{-|
-Delete row from table and update table ABV values if it was the first row
+{-| Delete row from table and update table ABV values if it was the first row
 -}
 deleteRow : Int -> List Row -> List Row
 deleteRow index rows =
@@ -189,7 +188,6 @@ updateTableAbvs table =
                 |> Maybe.andThen .correctedGravity
     in
     List.map (updateAbv og) table
-
 
 
 setDefaultCalibration : Float -> Model -> Model
