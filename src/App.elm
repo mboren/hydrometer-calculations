@@ -276,7 +276,7 @@ config lastRowIndex =
         , columns =
             [ inputColumn "Measured SG" .measuredGravity NewGravity
             , inputColumn "Measured Temp (F)" .measuredTemperature NewTemperature
-            , inputColumn "Hydrometer Calibration Temp (F)" .hydrometerCalibration NewCalibration
+            , inputColumn "Hydrometer Calibration (F)" .hydrometerCalibration NewCalibration
             , outputColumn "Corrected SG" (.correctedGravity >> formatGravity)
             , outputColumn "ABV" (.abv >> formatAbv)
             , deleteColumn lastRowIndex
@@ -334,6 +334,8 @@ numberInput default inputEvent =
         , Html.Attributes.value default
         , Html.Events.onInput inputEvent
         , Html.Attributes.tabindex 1
+        , Html.Attributes.style
+            [ ( "width", "98%" ) ]
         ]
         []
 
