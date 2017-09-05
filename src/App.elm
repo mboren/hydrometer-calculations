@@ -69,7 +69,6 @@ type Msg
     | NewTemperature Int String
     | NewCalibration Int String
     | SetTableState Table.State
-    | NewDefaultCalibration String
     | DeleteRow Int
     | Clear
 
@@ -83,7 +82,19 @@ update msg model =
             )
 
         NewCalibration index value ->
-            ( handleInputFields (setCalibration value) index model
+            let
+                newDefault =
+                    if index == List.length model.table - 1 then
+                        value |> String.toFloat |> Result.withDefault model.defaultCalibration
+                    else
+                        model.defaultCalibration
+
+                newModel =
+                    model
+                        |> handleInputFields (setCalibration value) index
+                        |> setDefaultCalibration newDefault
+            in
+            ( newModel
             , Cmd.none
             )
 
@@ -94,23 +105,6 @@ update msg model =
 
         SetTableState newState ->
             ( { model | tableState = newState }
-            , Cmd.none
-            )
-
-        NewDefaultCalibration value ->
-            let
-                newDefault =
-                    value
-                        |> String.toFloat
-                        |> Result.withDefault model.defaultCalibration
-
-                newLastRow =
-                    setCalibration (toString newDefault) model.lastRow
-            in
-            ( { model
-                | defaultCalibration = newDefault
-                , lastRow = newLastRow
-              }
             , Cmd.none
             )
 
@@ -195,6 +189,19 @@ updateTableAbvs table =
                 |> Maybe.andThen .correctedGravity
     in
     List.map (updateAbv og) table
+
+
+
+setDefaultCalibration : Float -> Model -> Model
+setDefaultCalibration calibration model =
+    let
+        newLastRow =
+            setCalibration (toString calibration) model.lastRow
+    in
+    { model
+        | defaultCalibration = calibration
+        , lastRow = newLastRow
+    }
 
 
 setGravity : String -> Row -> Row
@@ -283,12 +290,7 @@ view : Model -> Html Msg
 view model =
     div
         []
-        [ label []
-            [ text "Default hydrometer calibration (F) "
-            , numberInput (toString model.defaultCalibration) NewDefaultCalibration
-            ]
-        , br [] []
-        , button
+        [ button
             [ Html.Events.onClick Clear ]
             [ text "delete everything in table" ]
         , br [] []
