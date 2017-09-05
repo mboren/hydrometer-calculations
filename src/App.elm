@@ -18,10 +18,6 @@ main =
         }
 
 
-type alias Temperature =
-    Float
-
-
 type alias Row =
     { measuredGravity : String
     , measuredTemperature : String
