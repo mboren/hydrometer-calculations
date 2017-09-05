@@ -269,7 +269,7 @@ formatAbv =
     Maybe.map (format "0.00%") >> Maybe.withDefault ""
 
 
-config =
+config lastRowIndex =
     Table.config
         { toId = Tuple.first >> toString
         , toMsg = SetTableState
@@ -279,20 +279,27 @@ config =
             , inputColumn "Hydrometer Calibration Temp (F)" .hydrometerCalibration NewCalibration
             , outputColumn "Corrected SG" (.correctedGravity >> formatGravity)
             , outputColumn "ABV" (.abv >> formatAbv)
-            , deleteColumn
+            , deleteColumn lastRowIndex
             ]
         }
 
 
 view : Model -> Html Msg
 view model =
+    let
+        cfg =
+            config (List.length model.table)
+
+        tableData =
+            List.indexedMap (,) (model.table ++ [ model.lastRow ])
+    in
     div
         []
         [ button
             [ Html.Events.onClick Clear ]
             [ text "delete everything in table" ]
         , br [] []
-        , Table.view config model.tableState (List.indexedMap (,) (model.table ++ [ model.lastRow ]))
+        , Table.view cfg model.tableState tableData
         ]
 
 
@@ -341,20 +348,24 @@ viewOutputColumn getValue ( _, row ) =
         ]
 
 
-deleteColumn : Table.Column ( Int, Row ) Msg
-deleteColumn =
+deleteColumn : Int -> Table.Column ( Int, Row ) Msg
+deleteColumn lastRowIndex =
     Table.veryCustomColumn
         { name = ""
-        , viewData = viewDeleteColumn
+        , viewData = viewDeleteColumn lastRowIndex
         , sorter = Table.unsortable
         }
 
 
-viewDeleteColumn : ( Int, a ) -> Table.HtmlDetails Msg
-viewDeleteColumn ( id, _ ) =
+viewDeleteColumn : Int -> ( Int, a ) -> Table.HtmlDetails Msg
+viewDeleteColumn lastRowIndex ( id, _ ) =
     Table.HtmlDetails
         []
-        [ button
-            [ Html.Events.onClick (DeleteRow id) ]
-            [ text "✖" ]
-        ]
+        (if lastRowIndex /= id then
+            [ button
+                [ Html.Events.onClick (DeleteRow id) ]
+                [ text "✖" ]
+            ]
+         else
+            []
+        )
