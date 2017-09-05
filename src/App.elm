@@ -298,10 +298,10 @@ view model =
                 Html.text ""
             else
                 button
-                [ Html.Events.onClick Clear ]
-                [ text "delete everything in table" ]
-
-
+                    [ Html.Events.onClick Clear
+                    , Html.Attributes.tabindex 1
+                    ]
+                    [ text "delete everything in table" ]
     in
     div
         []
@@ -333,6 +333,7 @@ numberInput default inputEvent =
         [ Html.Attributes.type_ "number"
         , Html.Attributes.value default
         , Html.Events.onInput inputEvent
+        , Html.Attributes.tabindex 1
         ]
         []
 
