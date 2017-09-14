@@ -8,6 +8,7 @@ mobile or desktop web browser that I'm aware of.
 
 The ABV formula used is accurate for both low and high gravity beverages.
 
+Try it [here](https://s3-us-west-1.amazonaws.com/mboren/brew.html).
 
 ## Table of Contents
 - [Dependencies](#dependencies)
