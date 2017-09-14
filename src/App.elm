@@ -8,6 +8,11 @@ import Numeral exposing (format)
 import Table
 
 
+type TempUnit
+    = Fahrenheit
+    | Celcius
+
+
 main : Program Never Model Msg
 main =
     Html.program
@@ -32,6 +37,7 @@ type alias Model =
     , lastRow : Row
     , tableState : Table.State
     , defaultCalibration : Float
+    , tempUnit : TempUnit
     }
 
 
@@ -55,6 +61,7 @@ init =
       , tableState = Table.initialSort ""
       , lastRow = emptyRow (toString defaultCalibration)
       , defaultCalibration = defaultCalibration
+      , tempUnit = Fahrenheit
       }
     , Cmd.none
     )
@@ -64,6 +71,7 @@ type Msg
     = NewGravity Int String
     | NewTemperature Int String
     | NewCalibration Int String
+    | SwitchTemperatureUnit
     | SetTableState Table.State
     | DeleteRow Int
     | Clear
@@ -118,6 +126,25 @@ update msg model =
             , Cmd.none
             )
 
+        SwitchTemperatureUnit ->
+            let
+                unit =
+                    case model.tempUnit of
+                        Fahrenheit ->
+                            Celcius
+
+                        Celcius ->
+                            Fahrenheit
+
+                nt =
+                    model.table
+                        |> List.map (updateCorrectedGravity unit)
+                        |> updateTableAbvs
+            in
+            ( { model | tempUnit = unit, table = nt }
+            , Cmd.none
+            )
+
 
 {-| Update table when an input field changes.
 This includes:
@@ -142,7 +169,7 @@ handleInputFields rowUpdate index model =
                         identity
                    )
                 |> updateRow index rowUpdate
-                |> updateRow index updateCorrectedGravity
+                |> updateRow index (updateCorrectedGravity model.tempUnit)
 
         og =
             tableWithUpdatedGravity
@@ -230,15 +257,26 @@ updateRow index f table =
     List.indexedMap updateFunc table
 
 
-updateCorrectedGravity : Row -> Row
-updateCorrectedGravity row =
+updateCorrectedGravity : TempUnit -> Row -> Row
+updateCorrectedGravity unit row =
     let
+        convert : String -> Result String Float
+        convert s =
+            case unit of
+                Fahrenheit ->
+                    String.toFloat s
+
+                Celcius ->
+                    s
+                        |> String.toFloat
+                        |> Result.map celciusToFahrenheit
+
         newCorrectedGravity =
             Result.map3
                 Brew.hydrometerTempCorrection
                 (String.toFloat row.measuredGravity)
-                (String.toFloat row.measuredTemperature)
-                (String.toFloat row.hydrometerCalibration)
+                (convert row.measuredTemperature)
+                (convert row.hydrometerCalibration)
     in
     { row
         | correctedGravity = Result.toMaybe newCorrectedGravity
@@ -265,14 +303,14 @@ formatAbv =
     Maybe.map (format "0.00%") >> Maybe.withDefault ""
 
 
-config lastRowIndex =
+config lastRowIndex unit =
     Table.config
         { toId = Tuple.first >> toString
         , toMsg = SetTableState
         , columns =
             [ inputColumn "Measured SG" .measuredGravity NewGravity
-            , inputColumn "Measured Temp (F)" .measuredTemperature NewTemperature
-            , inputColumn "Hydrometer Calibration (F)" .hydrometerCalibration NewCalibration
+            , inputColumn ("Measured Temp (" ++ abbreviateUnit unit ++ ")") .measuredTemperature NewTemperature
+            , inputColumn ("Hydrometer Calibration (" ++ abbreviateUnit unit ++ ")") .hydrometerCalibration NewCalibration
             , outputColumn "Corrected SG" (.correctedGravity >> formatGravity)
             , outputColumn "ABV" (.abv >> formatAbv)
             , deleteColumn lastRowIndex
@@ -284,7 +322,7 @@ view : Model -> Html Msg
 view model =
     let
         cfg =
-            config (List.length model.table)
+            config (List.length model.table) model.tempUnit
 
         tableData =
             List.indexedMap (,) (model.table ++ [ model.lastRow ])
@@ -298,11 +336,21 @@ view model =
                     , Html.Attributes.tabindex 1
                     ]
                     [ text "delete everything in table" ]
+
+        unitSwapButton =
+            button
+                [ Html.Events.onClick SwitchTemperatureUnit
+                , Html.Attributes.tabindex 1
+                ]
+                [ text "switch temperature unit" ]
     in
     div
         []
-        [ clearButton
-        , br [] []
+        [ div
+            []
+            [ clearButton
+            , unitSwapButton
+            ]
         , Table.view cfg model.tableState tableData
         ]
 
@@ -376,3 +424,18 @@ viewDeleteColumn lastRowIndex ( id, _ ) =
          else
             []
         )
+
+
+celciusToFahrenheit : Float -> Float
+celciusToFahrenheit celcius =
+    32 + celcius * 9 / 5
+
+
+abbreviateUnit : TempUnit -> String
+abbreviateUnit unit =
+    case unit of
+        Fahrenheit ->
+            "F"
+
+        Celcius ->
+            "C"
