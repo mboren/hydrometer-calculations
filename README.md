@@ -10,6 +10,8 @@ The ABV formula used is accurate for both low and high gravity beverages.
 
 Try it [here](https://s3-us-west-1.amazonaws.com/mboren/brew.html).
 
+![screen capture of app in use on a mobile phone](https://s3-us-west-1.amazonaws.com/hi-mom-im-on-the-internet/brewdemo.gif)
+
 ## Table of Contents
 - [Dependencies](#dependencies)
 - [Instructions](#instructions)
