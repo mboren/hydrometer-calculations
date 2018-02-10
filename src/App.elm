@@ -351,7 +351,9 @@ view model =
             [ clearButton
             , unitSwapButton
             ]
-        , Table.view cfg model.tableState tableData
+        , form
+            []
+            [ Table.view cfg model.tableState tableData ]
         ]
 
 
