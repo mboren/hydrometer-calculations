@@ -132,7 +132,9 @@ The last gravity reading is called the final gravity, or FG.
 
 ### Temperature correction
 mg: measured gravity
+
 mt: measured temperature
+
 hc: hydrometer calibration temperature
 
 Corrected specific gravity = mg * ((1.00130346 - 0.000134722124 * mt + 0.00000204052596 * mt^2  - 0.00000000232820948 * mt^3) / (1.00130346 - 0.000134722124 * hc + 0.00000204052596 * hc^2 - 0.00000000232820948 * hc^3))
