@@ -1,4 +1,5 @@
 # Hydrometer temperature correction and ABV calculator
+[![Build Status](https://travis-ci.org/mboren/hydrometer-calculations.svg?branch=master)](https://travis-ci.org/mboren/hydrometer-calculations)
 
 This application makes it easy to correct hydrometer readings for temperature
 and calculate ABV from specific gravity measurements.
