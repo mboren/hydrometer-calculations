@@ -1,6 +1,7 @@
 module App exposing (main)
 
 import Brew
+import Browser
 import Html exposing (..)
 import Html.Attributes
 import Html.Events
@@ -13,13 +14,11 @@ type TempUnit
     | Celcius
 
 
-main : Program Never Model Msg
 main =
-    Html.program
+    Browser.sandbox
         { init = init
         , view = view
         , update = update
-        , subscriptions = \_ -> Sub.none
         }
 
 
@@ -51,20 +50,18 @@ emptyRow calibration =
     }
 
 
-init : ( Model, Cmd Msg )
+init : Model
 init =
     let
         defaultCalibration =
             60
     in
-    ( { table = []
-      , tableState = Table.initialSort ""
-      , lastRow = emptyRow (toString defaultCalibration)
-      , defaultCalibration = defaultCalibration
-      , tempUnit = Fahrenheit
-      }
-    , Cmd.none
-    )
+    { table = []
+    , tableState = Table.initialSort ""
+    , lastRow = emptyRow (String.fromFloat defaultCalibration)
+    , defaultCalibration = defaultCalibration
+    , tempUnit = Fahrenheit
+    }
 
 
 type Msg
@@ -77,19 +74,17 @@ type Msg
     | Clear
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg -> Model -> Model
 update msg model =
     case msg of
         NewGravity index value ->
-            ( handleInputFields (setGravity value) index model
-            , Cmd.none
-            )
+            handleInputFields (setGravity value) index model
 
         NewCalibration index value ->
             let
                 newDefault =
                     if index == List.length model.table - 1 then
-                        value |> String.toFloat |> Result.withDefault model.defaultCalibration
+                        value |> String.toFloat |> Maybe.withDefault model.defaultCalibration
 
                     else
                         model.defaultCalibration
@@ -99,33 +94,23 @@ update msg model =
                         |> handleInputFields (setCalibration value) index
                         |> setDefaultCalibration newDefault
             in
-            ( newModel
-            , Cmd.none
-            )
+            newModel
 
         NewTemperature index value ->
-            ( handleInputFields (setTemperature value) index model
-            , Cmd.none
-            )
+            handleInputFields (setTemperature value) index model
 
         SetTableState newState ->
-            ( { model | tableState = newState }
-            , Cmd.none
-            )
+            { model | tableState = newState }
 
         Clear ->
-            ( { model
+            { model
                 | table = []
-              }
-            , Cmd.none
-            )
+            }
 
         DeleteRow index ->
-            ( { model
+            { model
                 | table = deleteRow index model.table
-              }
-            , Cmd.none
-            )
+            }
 
         SwitchTemperatureUnit ->
             let
@@ -142,9 +127,7 @@ update msg model =
                         |> List.map (updateCorrectedGravity unit)
                         |> updateTableAbvs
             in
-            ( { model | tempUnit = unit, table = nt }
-            , Cmd.none
-            )
+            { model | tempUnit = unit, table = nt }
 
 
 {-| Update table when an input field changes.
@@ -220,7 +203,7 @@ setDefaultCalibration : Float -> Model -> Model
 setDefaultCalibration calibration model =
     let
         newLastRow =
-            setCalibration (toString calibration) model.lastRow
+            setCalibration (String.fromFloat calibration) model.lastRow
     in
     { model
         | defaultCalibration = calibration
@@ -264,7 +247,7 @@ updateRow index f table =
 updateCorrectedGravity : TempUnit -> Row -> Row
 updateCorrectedGravity unit row =
     let
-        convert : String -> Result String Float
+        convert : String -> Maybe Float
         convert s =
             case unit of
                 Fahrenheit ->
@@ -273,17 +256,17 @@ updateCorrectedGravity unit row =
                 Celcius ->
                     s
                         |> String.toFloat
-                        |> Result.map celciusToFahrenheit
+                        |> Maybe.map celciusToFahrenheit
 
         newCorrectedGravity =
-            Result.map3
+            Maybe.map3
                 Brew.hydrometerTempCorrection
                 (String.toFloat row.measuredGravity)
                 (convert row.measuredTemperature)
                 (convert row.hydrometerCalibration)
     in
     { row
-        | correctedGravity = Result.toMaybe newCorrectedGravity
+        | correctedGravity = newCorrectedGravity
     }
 
 
@@ -296,7 +279,7 @@ updateAbv og row =
 
 addEmptyRow : Float -> List Row -> List Row
 addEmptyRow calibration rows =
-    List.append rows [ emptyRow (toString calibration) ]
+    List.append rows [ emptyRow (String.fromFloat calibration) ]
 
 
 formatGravity =
@@ -309,7 +292,7 @@ formatAbv =
 
 config lastRowIndex unit =
     Table.config
-        { toId = Tuple.first >> toString
+        { toId = Tuple.first >> String.fromInt
         , toMsg = SetTableState
         , columns =
             [ inputColumn "Measured SG" .measuredGravity NewGravity
