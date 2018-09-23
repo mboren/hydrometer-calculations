@@ -90,6 +90,7 @@ update msg model =
                 newDefault =
                     if index == List.length model.table - 1 then
                         value |> String.toFloat |> Result.withDefault model.defaultCalibration
+
                     else
                         model.defaultCalibration
 
@@ -165,6 +166,7 @@ handleInputFields rowUpdate index model =
             model.table
                 |> (if lastRow then
                         addEmptyRow model.defaultCalibration
+
                     else
                         identity
                    )
@@ -192,11 +194,12 @@ handleInputFields rowUpdate index model =
 deleteRow : Int -> List Row -> List Row
 deleteRow index rows =
     rows
-        |> List.indexedMap (,)
+        |> List.indexedMap (\a b -> ( a, b ))
         |> List.filter (Tuple.first >> (/=) index)
         |> List.map Tuple.second
         |> (if index == 0 then
                 updateTableAbvs
+
             else
                 identity
            )
@@ -251,6 +254,7 @@ updateRow index f table =
         updateFunc i row =
             if i == index then
                 f row
+
             else
                 row
     in
@@ -325,11 +329,12 @@ view model =
             config (List.length model.table) model.tempUnit
 
         tableData =
-            List.indexedMap (,) (model.table ++ [ model.lastRow ])
+            List.indexedMap (\a b -> ( a, b )) (model.table ++ [ model.lastRow ])
 
         clearButton =
             if List.isEmpty model.table then
                 Html.text ""
+
             else
                 button
                     [ Html.Events.onClick Clear
@@ -380,8 +385,7 @@ numberInput default inputEvent =
         , Html.Attributes.value default
         , Html.Events.onInput inputEvent
         , Html.Attributes.tabindex 1
-        , Html.Attributes.style
-            [ ( "width", "98%" ) ]
+        , Html.Attributes.style "width" "98%"
         ]
         []
 
@@ -398,8 +402,7 @@ outputColumn name getValue =
 viewOutputColumn : (Row -> String) -> ( a, Row ) -> Table.HtmlDetails Msg
 viewOutputColumn getValue ( _, row ) =
     Table.HtmlDetails
-        [ Html.Attributes.style
-            [ ( "background", "#EEEEEE" ) ]
+        [ Html.Attributes.style "background" "#EEEEEE"
         ]
         [ Html.text (getValue row)
         ]
@@ -423,6 +426,7 @@ viewDeleteColumn lastRowIndex ( id, _ ) =
                 [ Html.Events.onClick (DeleteRow id) ]
                 [ text "✖" ]
             ]
+
          else
             []
         )
