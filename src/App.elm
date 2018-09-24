@@ -83,7 +83,17 @@ update msg model =
         NewCalibration index value ->
             let
                 newDefault =
-                    if index == List.length model.table - 1 then
+                    {- The reason for this '>=' is hard to explain, which
+                       indicates that this logic is probably overcomplicated.
+
+                       1. If calibration is modified for second to last, and last
+                          has never been modified, we want to update calibration
+                          for last as well as second to last.
+                       2. We know that if someone modifies the second to last row,
+                          the last MUST be unmodified, bc as soon as you change
+                          the last row, a new row gets added.
+                    -}
+                    if index >= List.length model.table - 1 then
                         value |> String.toFloat |> Maybe.withDefault model.defaultCalibration
 
                     else
